@@ -3,9 +3,9 @@ import type { Response } from 'express';
 import { DomainErrorKind, DomainException } from '../domain/domain.exception';
 
 const STATUS_BY_KIND: Record<DomainErrorKind, number> = {
-  VALIDATION: HttpStatus.BAD_REQUEST,
-  NOT_FOUND: HttpStatus.NOT_FOUND,
-  CONFLICT: HttpStatus.CONFLICT,
+  VALIDATION: HttpStatus.BAD_REQUEST, // 400
+  NOT_FOUND: HttpStatus.NOT_FOUND, // 404
+  CONFLICT: HttpStatus.CONFLICT, // 409
 };
 
 @Catch(DomainException)

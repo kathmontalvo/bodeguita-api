@@ -5,6 +5,8 @@ import { envValidationSchema } from './config/env.validation';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
+import { CqrsModule } from '@nestjs/cqrs';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { typeOrmConfig } from './config/typeorm.config';
     TypeOrmModule.forRootAsync({
         inject: [ConfigService],
         useFactory: typeOrmConfig,
-    })
+    }),
+    CqrsModule.forRoot(),
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
