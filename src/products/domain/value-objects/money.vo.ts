@@ -9,7 +9,7 @@ export class Money {
 
   static create(cents: number): Money {
     if (!Number.isInteger(cents) || cents <= 0) {
-      throw new InvalidPriceError(cents);
+      throw new InvalidPriceError();
     }
     return new Money(cents);
   }
