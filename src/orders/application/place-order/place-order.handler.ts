@@ -1,5 +1,5 @@
 import { Inject } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, EventBus, ICommandHandler } from '@nestjs/cqrs';
 import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
 import { OrderWithoutItemsError } from '../../domain/errors/order-without-items.error';
 import { ProductNotFoundError } from '../../domain/errors/product-not-found.error';
@@ -24,6 +24,7 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
     @Inject(STOCK_CHECKER) private readonly stockChecker: StockChecker,
     @Inject(CLOCK) private readonly clock: Clock,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: PlaceOrderCommand): Promise<{ id: string }> {
@@ -48,6 +49,11 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
     );
 
     await this.orders.save(order);
+
+    // 4. Solo DESPUÉS de guardar se publica OrderPlaced: si save() falla, nadie
+    // se entera de un pedido que no existe. Products lo escucha y descuenta stock.
+    this.eventBus.publishAll(order.pullDomainEvents());
+
     return { id: order.toPrimitives().id };
   }
 

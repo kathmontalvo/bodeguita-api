@@ -1,3 +1,4 @@
+import { EventBus } from '@nestjs/cqrs';
 import { InsufficientStockError } from '../../domain/errors/insufficient-stock.error';
 import { InvalidQuantityError } from '../../domain/errors/invalid-quantity.error';
 import { OrderWithoutItemsError } from '../../domain/errors/order-without-items.error';
@@ -24,7 +25,14 @@ describe('PlaceOrderHandler', () => {
     stockChecker = new FakeStockChecker()
       .set(INCA, { stock: 10, priceCents: 350 })
       .set(ARROZ, { stock: 5, priceCents: 520 });
-    handler = new PlaceOrderHandler(orders, stockChecker, new FixedClock(NOW));
+    // EventBus que no publica nada: estos tests no revisan el evento.
+    const eventBus = { publishAll: jest.fn() } as unknown as EventBus;
+    handler = new PlaceOrderHandler(
+      orders,
+      stockChecker,
+      new FixedClock(NOW),
+      eventBus,
+    );
   });
 
   const place = (items: { productId: string; quantity: number }[]) =>

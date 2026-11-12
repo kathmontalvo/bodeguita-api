@@ -5,6 +5,8 @@ import { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { setupApp } from '../src/app.setup';
+import { OrderPlaced } from '../src/orders/domain/events/order-placed.event';
+import { DecreaseStockOnOrderPlaced } from '../src/products/infrastructure/listeners/decrease-stock-on-order-placed.listener';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const NO_EXISTE = '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed';
@@ -24,6 +26,7 @@ interface OrderBody {
 describe('Orders (e2e)', () => {
   let app: INestApplication<App>;
   let dataSource: DataSource;
+  const pendingEvents: Promise<void>[] = [];
 
   // Productos creados en cada test por POST /products.
   let incaId: string;
@@ -38,6 +41,25 @@ describe('Orders (e2e)', () => {
     setupApp(app);
     await app.init();
     dataSource = app.get(DataSource);
+
+    // El listener de OrderPlaced corre DESPUÉS de que responde el POST. Se
+    // guardan sus promesas para esperarlas al final de cada test; si no, su
+    // save() podría ejecutarse después del TRUNCATE del test siguiente.
+    const listener = app.get(DecreaseStockOnOrderPlaced);
+    // Se guarda el método ORIGINAL antes de espiarlo; si no, el spy se
+    // llamaría a sí mismo.
+    const handle = listener.handle.bind(listener) as (
+      event: OrderPlaced,
+    ) => Promise<void>;
+    jest.spyOn(listener, 'handle').mockImplementation((event) => {
+      const done = handle(event);
+      pendingEvents.push(done);
+      return done;
+    });
+  });
+
+  afterEach(async () => {
+    await Promise.all(pendingEvents.splice(0));
   });
 
   beforeEach(async () => {
