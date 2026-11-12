@@ -58,6 +58,74 @@ describe('Product', () => {
     });
   });
 
+  describe('rename', () => {
+    it('cambia el nombre (sin espacios al inicio ni al final)', () => {
+      const product = Product.create(props);
+      product.rename('  Inca Kola 1L ');
+      expect(product.toPrimitives().name).toBe('Inca Kola 1L');
+    });
+
+    it('rechaza un nombre vacío y conserva el anterior', () => {
+      const product = Product.create(props);
+      expect(() => product.rename('  ')).toThrow(InvalidProductNameError);
+      expect(product.toPrimitives().name).toBe('Inca Kola 500ml');
+    });
+  });
+
+  describe('changePrice', () => {
+    it('cambia el precio', () => {
+      const product = Product.create(props);
+      product.changePrice(420);
+      expect(product.toPrimitives().priceCents).toBe(420);
+    });
+
+    it.each([0, -100, 3.5])(
+      'RN-002: rechaza %p y conserva el precio anterior',
+      (cents) => {
+        const product = Product.create(props);
+        expect(() => product.changePrice(cents)).toThrow(InvalidPriceError);
+        expect(product.toPrimitives().priceCents).toBe(350);
+      },
+    );
+  });
+
+  describe('changeStock', () => {
+    it('fija el stock al valor nuevo (no lo suma)', () => {
+      const product = Product.create(props);
+      product.changeStock(50);
+      expect(product.toPrimitives().stock).toBe(50);
+    });
+
+    it('acepta dejarlo en 0', () => {
+      const product = Product.create(props);
+      product.changeStock(0);
+      expect(product.toPrimitives().stock).toBe(0);
+    });
+
+    it.each([-1, 2.5])(
+      'RN-003: rechaza %p y conserva el stock anterior',
+      (stock) => {
+        const product = Product.create(props);
+        expect(() => product.changeStock(stock)).toThrow(InvalidStockError);
+        expect(product.toPrimitives().stock).toBe(5);
+      },
+    );
+  });
+
+  it('el SKU y el id no cambian al actualizar', () => {
+    const product = Product.create(props);
+    const before = product.toPrimitives();
+
+    product.rename('Otro nombre');
+    product.changePrice(999);
+    product.changeStock(1);
+
+    expect(product.toPrimitives()).toMatchObject({
+      id: before.id,
+      sku: before.sku,
+    });
+  });
+
   describe('fromPrimitives / toPrimitives', () => {
     const stored: ProductPrimitives = {
       id: '3f2b8c1e-9a4d-4e7b-8c2a-1d5e6f7a8b9c',

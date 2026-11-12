@@ -266,4 +266,49 @@ describe('Orders (e2e)', () => {
       });
     });
   });
+
+  describe('GET /orders', () => {
+    it('200: lista vacía si no hay pedidos', async () => {
+      await request(app.getHttpServer()).get('/orders').expect(200, []);
+    });
+
+    it('200: devuelve los pedidos del más reciente al más antiguo', async () => {
+      const first = await placeOrder({
+        items: [{ productId: incaId, quantity: 2 }],
+      }).expect(201);
+      const second = await placeOrder({
+        items: [{ productId: arrozId, quantity: 1 }],
+      }).expect(201);
+
+      const res = await request(app.getHttpServer()).get('/orders').expect(200);
+      const body = res.body as OrderBody[];
+
+      expect(body.map((o) => o.id)).toEqual([
+        (second.body as { id: string }).id,
+        (first.body as { id: string }).id,
+      ]);
+      expect(body[1]).toMatchObject({
+        items: [
+          { productId: incaId, quantity: 2, unitPrice: 3.5, subtotal: 7 },
+        ],
+        total: 7,
+      });
+    });
+
+    it('RN-008: cambiar el precio con PATCH no cambia los pedidos ya hechos', async () => {
+      await placeOrder({ items: [{ productId: incaId, quantity: 1 }] }).expect(
+        201,
+      );
+
+      await request(app.getHttpServer())
+        .patch(`/products/${incaId}`)
+        .send({ price: 9.99 })
+        .expect(200);
+
+      const res = await request(app.getHttpServer()).get('/orders').expect(200);
+      expect(res.body).toMatchObject([
+        { items: [{ unitPrice: 3.5 }], total: 3.5 },
+      ]);
+    });
+  });
 });

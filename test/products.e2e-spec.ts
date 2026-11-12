@@ -128,4 +128,130 @@ describe('Products (e2e)', () => {
       ]);
     });
   });
+
+  describe('GET /products/:id', () => {
+    it('200: devuelve el producto con el precio en soles', async () => {
+      const created = await createProduct(inca).expect(201);
+      const { id } = created.body as { id: string };
+
+      await request(app.getHttpServer()).get(`/products/${id}`).expect(200, {
+        id,
+        sku: 'INCA-500',
+        name: 'Inca Kola 500ml',
+        price: 3.5,
+        stock: 24,
+      });
+    });
+
+    it('404: producto inexistente', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/products/1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed')
+        .expect(404);
+
+      expect(res.body).toMatchObject({ code: 'PRODUCT_NOT_FOUND' });
+    });
+
+    it('400: id que no es UUID', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/products/abc')
+        .expect(400);
+
+      expect(res.body).toMatchObject({ code: 'INVALID_PRODUCT_ID' });
+    });
+  });
+
+  describe('PATCH /products/:id', () => {
+    let id: string;
+
+    beforeEach(async () => {
+      const created = await createProduct(inca).expect(201);
+      id = (created.body as { id: string }).id;
+    });
+
+    const updateProduct = (body: object, productId = id) =>
+      request(app.getHttpServer()).patch(`/products/${productId}`).send(body);
+
+    const getProduct = () =>
+      request(app.getHttpServer()).get(`/products/${id}`).expect(200);
+
+    it('200: cambia solo lo enviado y devuelve el producto actualizado', async () => {
+      const res = await updateProduct({ price: 4.2 }).expect(200);
+
+      expect(res.body).toEqual({
+        id,
+        sku: 'INCA-500',
+        name: 'Inca Kola 500ml',
+        price: 4.2,
+        stock: 24,
+      });
+      expect((await getProduct()).body).toEqual(res.body);
+    });
+
+    it('200: cambia nombre, precio y stock a la vez, y guarda céntimos', async () => {
+      await updateProduct({
+        name: 'Inca Kola 1L',
+        price: 6.9,
+        stock: 50,
+      }).expect(200);
+
+      const rows: unknown[] = await dataSource.query(
+        'SELECT name, price_cents, stock FROM products WHERE id = $1',
+        [id],
+      );
+      expect(rows).toEqual([
+        { name: 'Inca Kola 1L', price_cents: 690, stock: 50 },
+      ]);
+    });
+
+    it('200: body vacío no cambia nada', async () => {
+      await updateProduct({}).expect(200);
+
+      expect((await getProduct()).body).toMatchObject({
+        price: 3.5,
+        stock: 24,
+      });
+    });
+
+    it.each([
+      ['precio 0 (RN-002)', { price: 0 }, 'INVALID_PRICE'],
+      ['stock negativo (RN-003)', { stock: -1 }, 'INVALID_STOCK'],
+      ['nombre vacío', { name: '  ' }, 'INVALID_PRODUCT_NAME'],
+    ])('400: %s y no guarda nada', async (_, body, code) => {
+      const res = await updateProduct(body).expect(400);
+
+      expect(res.body).toMatchObject({ statusCode: 400, code });
+      expect((await getProduct()).body).toMatchObject({
+        name: 'Inca Kola 500ml',
+        price: 3.5,
+        stock: 24,
+      });
+    });
+
+    it('400: el SKU no se puede cambiar', async () => {
+      await updateProduct({ sku: 'OTRO-SKU' }).expect(400);
+
+      expect((await getProduct()).body).toMatchObject({ sku: 'INCA-500' });
+    });
+
+    it('400: el DTO rechaza tipos incorrectos y precio con 3 decimales', async () => {
+      await updateProduct({ price: 'tres' }).expect(400);
+      await updateProduct({ price: 3.555 }).expect(400);
+      await updateProduct({ stock: 1.5 }).expect(400);
+    });
+
+    it('404: producto inexistente', async () => {
+      const res = await updateProduct(
+        { price: 1 },
+        '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed',
+      ).expect(404);
+
+      expect(res.body).toMatchObject({ code: 'PRODUCT_NOT_FOUND' });
+    });
+
+    it('400: id que no es UUID', async () => {
+      const res = await updateProduct({ price: 1 }, 'abc').expect(400);
+
+      expect(res.body).toMatchObject({ code: 'INVALID_PRODUCT_ID' });
+    });
+  });
 });
