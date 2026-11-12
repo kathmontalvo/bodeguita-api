@@ -1,5 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { DomainExceptionFilter } from './shared/infrasctructure/domain-exception.filter';
+import { DomainExceptionFilter } from './shared/infrastructure/domain-exception.filter';
 
 /**
  * Configuración global de la app. La usan main.ts y los tests e2e, así los
