@@ -1,7 +1,7 @@
 /**
  * Evento de dominio: "se registró un pedido". Es una clase simple, sin
  * decoradores de Nest. El handler de PlaceOrder lo publica en el EventBus
- * después de guardar, y Catálogo lo escucha para descontar stock (etapa 9).
+ * después de guardar, y Catálogo lo escucha para descontar stock.
  *
  * Solo lleva lo que el listener necesita: qué productos y cuántos.
  */
