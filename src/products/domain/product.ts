@@ -20,8 +20,8 @@ export class Product {
   private constructor(
     private readonly id: ProductId,
     private readonly sku: Sku,
-    private readonly name: ProductName,
-    private readonly price: Money,
+    private name: ProductName,
+    private price: Money,
     private stock: Stock,
   ) {}
 
@@ -45,6 +45,27 @@ export class Product {
       Money.create(data.priceCents),
       Stock.create(data.stock),
     );
+  }
+
+  /** Cambia el nombre. ProductName valida que no esté vacío ni pase el máximo. */
+  rename(name: string): void {
+    this.name = ProductName.create(name);
+  }
+
+  /**
+   * Cambia el precio (RN-002: mayor que 0). Los pedidos ya registrados no
+   * cambian: guardan su propia copia del precio (RN-008).
+   */
+  changePrice(priceCents: number): void {
+    this.price = Money.create(priceCents);
+  }
+
+  /**
+   * Fija el stock a un valor nuevo (reposición o ajuste de inventario).
+   * RN-003: Stock no acepta negativos.
+   */
+  changeStock(stock: number): void {
+    this.stock = Stock.create(stock);
   }
 
   /** RN-003 / RN-006: lanza INSUFFICIENT_STOCK si no alcanza. */

@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CreateProductHandler } from './application/create-product/create-product.handler';
+import { GetProductHandler } from './application/get-product/get-product.handler';
 import { ListProductsHandler } from './application/list-products/list-products.handler';
+import { UpdateProductHandler } from './application/update-product/update-product.handler';
 import { PRODUCT_REPOSITORY } from './domain/ports/product.repository';
 import { ProductsController } from './infrastructure/http/products.controller';
 import { DecreaseStockOnOrderPlaced } from './infrastructure/listeners/decrease-stock-on-order-placed.listener';
@@ -15,6 +17,8 @@ import { TypeOrmProductRepository } from './infrastructure/persistence/typeorm-p
   providers: [
     CreateProductHandler,
     ListProductsHandler,
+    GetProductHandler,
+    UpdateProductHandler,
     // Escucha OrderPlaced y descuenta stock.
     DecreaseStockOnOrderPlaced,
     // Puerto - adaptador: quien pida PRODUCT_REPOSITORY recibe el de TypeORM.

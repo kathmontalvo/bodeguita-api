@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsModule } from '../products/products.module';
 import { GetOrderHandler } from './application/get-order/get-order.handler';
+import { ListOrdersHandler } from './application/list-orders/list-orders.handler';
 import { PlaceOrderHandler } from './application/place-order/place-order.handler';
 import { CLOCK } from './domain/ports/clock';
 import { ORDER_REPOSITORY } from './domain/ports/order.repository';
@@ -23,6 +24,7 @@ import { CatalogStockChecker } from './infrastructure/stock-checker/catalog-stoc
   providers: [
     PlaceOrderHandler,
     GetOrderHandler,
+    ListOrdersHandler,
     // Puertos - adaptadores reales.
     { provide: ORDER_REPOSITORY, useClass: TypeOrmOrderRepository },
     { provide: STOCK_CHECKER, useClass: CatalogStockChecker },

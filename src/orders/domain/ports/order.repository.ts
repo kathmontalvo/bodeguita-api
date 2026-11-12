@@ -11,4 +11,6 @@ export interface OrderRepository {
   /** Guarda el pedido con todos sus ítems. */
   save(order: Order): Promise<void>;
   findById(id: OrderId): Promise<Order | null>;
+  /** Todos los pedidos, del más reciente al más antiguo. */
+  findAll(): Promise<Order[]>;
 }

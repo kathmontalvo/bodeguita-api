@@ -15,6 +15,7 @@ import {
   IdResponseDto,
 } from '../../../shared/infrastructure/http/api-responses';
 import { GetOrderQuery } from '../../application/get-order/get-order.query';
+import { ListOrdersQuery } from '../../application/list-orders/list-orders.query';
 import { OrderResponse } from '../../application/order.response';
 import { PlaceOrderCommand } from '../../application/place-order/place-order.command';
 import { OrderResponseDto } from './dtos/order-response.dto';
@@ -55,6 +56,13 @@ export class OrdersController {
         dto.items.map(({ productId, quantity }) => ({ productId, quantity })),
       ),
     );
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Listar pedidos, del más reciente al más antiguo' })
+  @ApiOkResponse({ type: [OrderResponseDto] })
+  list(): Promise<OrderResponse[]> {
+    return this.queryBus.execute(new ListOrdersQuery());
   }
 
   /** Sin ParseUUIDPipe: el id lo valida OrderId en el dominio. */

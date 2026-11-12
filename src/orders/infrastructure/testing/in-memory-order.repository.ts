@@ -20,6 +20,13 @@ export class InMemoryOrderRepository implements OrderRepository {
     return Promise.resolve(data ? Order.fromPrimitives(data) : null);
   }
 
+  findAll(): Promise<Order[]> {
+    const rows = [...this.rows.values()].sort(
+      (a, b) => b.placedAt.getTime() - a.placedAt.getTime(),
+    );
+    return Promise.resolve(rows.map((data) => Order.fromPrimitives(data)));
+  }
+
   /** Solo para tests: cuántos pedidos hay guardados. */
   count(): number {
     return this.rows.size;

@@ -31,4 +31,12 @@ export class TypeOrmOrderRepository implements OrderRepository {
     });
     return row ? OrderMapper.toDomain(row) : null;
   }
+
+  async findAll(): Promise<Order[]> {
+    const rows = await this.repository.find({
+      relations: { items: true },
+      order: { placedAt: 'DESC' },
+    });
+    return rows.map((row) => OrderMapper.toDomain(row));
+  }
 }
